@@ -88,9 +88,9 @@ LibraryApp/
 │   ├── books.txt
 │   └── loans.txt
 │
-├── run_with_drive.sh                       # Script para ejecutar con Google Drive
 ├── README.md                               # Este archivo
-└── GOOGLE_DRIVE_SETUP.md                   # Guía de configuración de Google Drive
+├── GOOGLE_DRIVE_SETUP.md                   # Guía de configuración de Google Drive
+└── DATA_DESIGN.md                          # Decisiones de diseño de datos
 ```
 
 ---
@@ -164,6 +164,8 @@ L001|12344567|B001|2026-02-04|null|true
 ```
 
 **Delimitador:** Carácter pipe (`|`)
+
+**📖 Para más detalles sobre la estructura de datos y decisiones de diseño, ver:** [`DATA_DESIGN.md`](DATA_DESIGN.md)
 
 ---
 
@@ -299,7 +301,11 @@ export LIBRARY_DATA_PATH="/ruta/completa/a/data/"
 
 ## 📚 Documentación Adicional
 
-- `GOOGLE_DRIVE_SETUP.md` - Guía completa de configuración de Google Drive para trabajo en equipo
+### Guías de Configuración
+- [`GOOGLE_DRIVE_SETUP.md`](GOOGLE_DRIVE_SETUP.md) - Guía completa de configuración de Google Drive para trabajo en equipo
+
+### Diseño y Arquitectura
+- [`DATA_DESIGN.md`](DATA_DESIGN.md) - Decisiones de diseño de datos: estructura de archivos, atributos de entidades, relaciones, y justificación de decisiones técnicas
 
 ---
 
