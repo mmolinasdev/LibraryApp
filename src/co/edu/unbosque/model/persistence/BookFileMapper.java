@@ -13,7 +13,7 @@ public class BookFileMapper {
         
         String[] fields = line.split("\\" + DELIMITER);
         
-        if (fields.length != 5) {
+        if (fields.length < 5) {
             return null;
         }
         
@@ -24,7 +24,15 @@ public class BookFileMapper {
             book.setTitle(fields[1]);
             book.setAuthor(fields[2]);
             book.setIsbn(fields[3]);
-            book.setAvailable(Boolean.parseBoolean(fields[4]));
+            
+            if (fields.length == 5) {
+                boolean oldAvailable = Boolean.parseBoolean(fields[4]);
+                book.setStock(1);
+                book.setAvailableStock(oldAvailable ? 1 : 0);
+            } else if (fields.length >= 6) {
+                book.setStock(Integer.parseInt(fields[4]));
+                book.setAvailableStock(Integer.parseInt(fields[5]));
+            }
             
             return book;
             
@@ -43,6 +51,7 @@ public class BookFileMapper {
                book.getTitle() + DELIMITER + 
                book.getAuthor() + DELIMITER + 
                book.getIsbn() + DELIMITER + 
-               book.isAvailable();
+               book.getStock() + DELIMITER + 
+               book.getAvailableStock();
     }
 }

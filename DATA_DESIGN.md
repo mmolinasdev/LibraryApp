@@ -107,14 +107,14 @@ U002|María García|maria.garcia@email.com|3109876543|Av. Libertador 890|1985-08
 
 ### Estructura
 ```
-id|title|author|isbn|available
+id|title|author|isbn|stock|availableStock
 ```
 
 ### Ejemplo Real
 ```
-B001|Cien Años de Soledad|Gabriel García Márquez|978-0307474728|true
-B002|Don Quijote de la Mancha|Miguel de Cervantes|978-8491050643|false
-B003|1984|George Orwell|978-0451524935|true
+B001|Cien Años de Soledad|Gabriel García Márquez|978-0307474728|5|3
+B002|Don Quijote de la Mancha|Miguel de Cervantes|978-8491050643|3|0
+B003|1984|George Orwell|978-0451524935|4|4
 ```
 
 ### Atributos Detallados
@@ -125,34 +125,74 @@ B003|1984|George Orwell|978-0451524935|true
 | **title** | String | ✅ Sí | Título completo del libro | Identificación principal del libro. Usado en búsquedas y listados. |
 | **author** | String | ✅ Sí | Nombre del autor | Esencial para identificación y búsquedas. Permite filtrar por autor favorito. |
 | **isbn** | String | ✅ Sí | ISBN (International Standard Book Number) | Estándar internacional que identifica única e inequívocamente el libro. Útil para catalogación y búsqueda externa. |
-| **available** | Boolean | ✅ Sí | Disponibilidad para préstamo (true/false) | Estado en tiempo real. `true` = disponible, `false` = prestado. Se actualiza automáticamente con los préstamos. |
+| **stock** | Integer | ✅ Sí | Cantidad total de copias del libro | Número total de ejemplares físicos que posee la biblioteca (prestados + disponibles). |
+| **availableStock** | Integer | ✅ Sí | Cantidad de copias disponibles para préstamo | Se decrementa al prestar un libro y se incrementa al devolverlo. Debe cumplir: `0 ≤ availableStock ≤ stock`. |
 
 ### Decisiones de Diseño - Libro
 
-1. **ISBN como String**
+1. **¿Por qué tener ID e ISBN? ¿No es redundante?**
+   
+   **NO son redundantes**, cada uno tiene un propósito diferente:
+   
+   | Aspecto | ID Interno | ISBN |
+   |---------|-----------|------|
+   | **Identifica** | El registro en tu sistema | La edición específica del libro |
+   | **Alcance** | Local (tu biblioteca) | Estándar internacional |
+   | **Ejemplo** | `B001` | `978-0451524935` |
+   | **Longitud** | Corto (4-5 caracteres) | Largo (13-17 caracteres) |
+   | **Unicidad** | Por registro | Por edición |
+   
+   **Casos donde se ve la diferencia:**
+   
+   - **Múltiples copias**: 5 copias de "1984" → 1 registro `B001`, mismo ISBN para todas
+   - **Diferentes ediciones**: "Don Quijote" edición 2010 (`B001`) vs edición 2020 (`B002`) → Mismo título, ISBNs diferentes
+   - **Libros sin ISBN**: Tesis, manuales internos, libros antiguos → Necesitas ID interno
+   
+   **Analogía del supermercado:**
+   - **ISBN** = Código de barras EAN (mismo en todas las tiendas)
+   - **ID** = SKU interno (único de cada tienda)
+   
+   **Ventajas de tener ambos:**
+   - ✅ Búsqueda bibliográfica externa (Google Books, OpenLibrary)
+   - ✅ Flexibilidad para libros sin ISBN
+   - ✅ UX: Más fácil decir "préstame B001" que "préstame el 978-0451524935"
+   - ✅ Integración futura con APIs externas
+
+2. **ISBN como String**
    - Incluye guiones: 978-0-307-47472-8
    - Evita problemas con ceros iniciales
    - Estándar global para identificación de libros
+   - Puede ser "N/A" para libros sin ISBN
 
-2. **Autor como String simple**
+3. **Autor como String simple**
    - Suficiente para biblioteca pequeña/mediana
    - Evita complejidad de múltiples autores
    - Puede incluir varios autores separados por coma si es necesario
 
-3. **available en lugar de estado complejo**
-   - Binario y simple: disponible o no
-   - Se sincroniza automáticamente con préstamos
-   - Suficiente para operación básica
+4. **Sistema de Stock (stock + availableStock)**
+   - **stock**: Inventario total de copias físicas
+   - **availableStock**: Copias actualmente disponibles
+   - **Ventajas**:
+     - ✅ Evita duplicación de registros por cada copia
+     - ✅ Facilita gestión de inventario
+     - ✅ Reduce tamaño de archivo
+     - ✅ Simplifica reportes (total vs disponible)
+     - ✅ Mejor experiencia de usuario
+   - **Lógica**:
+     - Préstamo: `availableStock--`
+     - Devolución: `availableStock++`
+     - Validación: `availableStock > 0` para permitir préstamo
+     - Invariante: `0 ≤ availableStock ≤ stock`
 
-4. **Sin campos de editorial, año, género**
+5. **Sin campos de editorial, año, género**
    - **Principio YAGNI** (You Aren't Gonna Need It)
    - Se pueden agregar después si se requieren
    - Mantiene el modelo simple y enfocado
 
-5. **Sin cantidad/copias**
-   - Cada copia física = registro separado
-   - Simplifica lógica de préstamos
-   - Ejemplo: 3 copias de "1984" = B003, B003-2, B003-3
+6. **Compatibilidad con formato anterior**
+   - El sistema puede leer archivos antiguos (formato `id|title|author|isbn|available`)
+   - Conversión automática: `available=true` → `stock=1, availableStock=1`
+   - Conversión automática: `available=false` → `stock=1, availableStock=0`
 
 ---
 
@@ -242,10 +282,11 @@ L1739069343210|U001|B003|2024-02-03|null|true
    - Un préstamo se refiere a un solo libro
    - **Restricción**: No se puede eliminar un libro con préstamos activos
 
-3. **Sincronización Book.available**
-   - Cuando se crea un Loan (active=true) → Book.available = false
-   - Cuando se devuelve un Loan (active=false) → Book.available = true
-   - **Crítico**: Mantener consistencia entre ambas entidades
+3. **Sincronización Book.availableStock**
+   - Cuando se crea un Loan (active=true) → Book.availableStock--
+   - Cuando se devuelve un Loan (active=false) → Book.availableStock++
+   - **Validación**: Solo se permite préstamo si `availableStock > 0`
+   - **Crítico**: Mantener consistencia entre préstamos y stock disponible
 
 ---
 
@@ -371,16 +412,17 @@ enum LoanStatus { ACTIVE, RETURNED, OVERDUE, CANCELLED }
 ### Lo que el modelo PUEDE hacer:
 ✅ Registrar usuarios con información completa  
 ✅ Catalogar libros con ISBN estándar  
+✅ **Gestionar múltiples copias del mismo libro con stock**  
 ✅ Rastrear préstamos activos e históricos  
 ✅ Sincronizar entre múltiples computadoras (Google Drive)  
-✅ Prevenir préstamos de libros no disponibles  
+✅ Prevenir préstamos cuando no hay copias disponibles  
 ✅ Mantener historial completo de transacciones  
 ✅ Desactivar usuarios sin perder datos  
 ✅ Consultar préstamos por usuario o libro  
+✅ **Reportes de inventario (total vs disponible)**  
 
 ### Lo que el modelo NO puede hacer (por diseño):
 ❌ Transacciones concurrentes seguras (conflictos posibles)  
-❌ Múltiples copias del mismo libro (requiere ID diferente por copia)  
 ❌ Multas automáticas por retraso (no hay fecha límite)  
 ❌ Reservas de libros  
 ❌ Categorización avanzada (géneros, editoriales)  
@@ -400,10 +442,10 @@ Si el sistema crece, se podría considerar:
    - Sin necesidad de servidor
 
 2. **Campos adicionales:**
-   - `Book.quantity` (múltiples copias)
    - `Loan.dueDate` y `Loan.fine`
    - `User.membershipLevel`
    - `Book.category` y `Book.publicationYear`
+   - `Book.location` (ubicación física en la biblioteca)
 
 3. **Entidades nuevas:**
    - `Reservation` (reservas de libros)

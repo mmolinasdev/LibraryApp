@@ -97,7 +97,7 @@ public class ViewConsole {
         if (book != null) {
             System.out.println("Book{ID='" + book.getId() + "', Title='" + book.getTitle() + 
                              "', Author='" + book.getAuthor() + "', ISBN='" + book.getIsbn() + 
-                             "', Available=" + (book.isAvailable() ? "Yes" : "No") + "}");
+                             "', Stock=" + book.getStock() + ", Available=" + book.getAvailableStock() + "}");
         } else {
             System.out.println("Book not found.");
         }
@@ -107,27 +107,28 @@ public class ViewConsole {
         if (books.isEmpty()) {
             System.out.println("\nNo books found.");
         } else {
-            System.out.println("\n+-----------+--------------------------+-----------------------+-------------------+-----------+");
-            System.out.println("|                                     BOOK LIST                                     |");
-            System.out.println("+-----------+--------------------------+-----------------------+-------------------+-----------+");
-            System.out.println("|    ID     |         Title            |        Author         |       ISBN        | Available |");
-            System.out.println("+-----------+--------------------------+-----------------------+-------------------+-----------+");
+            System.out.println("\n+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
+            System.out.println("|                                        BOOK LIST                                             |");
+            System.out.println("+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
+            System.out.println("|    ID     |         Title            |        Author         |       ISBN        | Stock | Available |");
+            System.out.println("+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
             
             for (BookDTO book : books) {
-                String availability = book.isAvailable() ? "   Yes" : "   No";
-                
-                System.out.printf("| %-9s | %-24s | %-21s | %-17s | %-9s |%n",
+                System.out.printf("| %-9s | %-24s | %-21s | %-17s | %-5d | %-9d |%n",
                     truncateText(book.getId(), 9),
                     truncateText(book.getTitle(), 24),
                     truncateText(book.getAuthor(), 21),
                     truncateText(book.getIsbn(), 17),
-                    availability
+                    book.getStock(),
+                    book.getAvailableStock()
                 );
             }
             
-            System.out.println("+-----------+--------------------------+-----------------------+-------------------+-----------+");
-            System.out.println("Total books: " + books.size() + " | Available: " + 
-                books.stream().filter(BookDTO::isAvailable).count());
+            System.out.println("+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
+            int totalStock = books.stream().mapToInt(BookDTO::getStock).sum();
+            int totalAvailable = books.stream().mapToInt(BookDTO::getAvailableStock).sum();
+            System.out.println("Total books: " + books.size() + " | Total copies: " + totalStock + 
+                             " | Available: " + totalAvailable);
         }
     }
 
@@ -331,16 +332,42 @@ public class ViewConsole {
         String title = readString("Title: ");
         String author = readString("Author: ");
         String isbn = readString("ISBN: ");
-        return new BookDTO(id, title, author, isbn, true);
+        int stock = readInt("Stock quantity: ");
+        return new BookDTO(id, title, author, isbn, stock, stock);
     }
 
     public BookDTO collectBookUpdateData(BookDTO existingBook) {
         System.out.println("\n--- Update Book Data ---");
         showBook(existingBook);
-        String title = readString("New title: ");
-        String author = readString("New author: ");
-        String isbn = readString("New ISBN: ");
-        return new BookDTO(existingBook.getId(), title, author, isbn, existingBook.isAvailable());
+        
+        String title = readString("New title (press Enter to keep current): ");
+        if (title.isEmpty()) title = existingBook.getTitle();
+        
+        String author = readString("New author (press Enter to keep current): ");
+        if (author.isEmpty()) author = existingBook.getAuthor();
+        
+        String isbn = readString("New ISBN (press Enter to keep current): ");
+        if (isbn.isEmpty()) isbn = existingBook.getIsbn();
+        
+        String stockInput = readString("New stock quantity (press Enter to keep current): ");
+        int stock = existingBook.getStock();
+        if (!stockInput.isEmpty()) {
+            try {
+                stock = Integer.parseInt(stockInput);
+            } catch (NumberFormatException e) {
+                System.out.println("Invalid stock quantity. Keeping current value.");
+            }
+        }
+        
+        int currentLoaned = existingBook.getStock() - existingBook.getAvailableStock();
+        int availableStock = stock - currentLoaned;
+        
+        if (availableStock < 0) {
+            System.out.println("Warning: New stock is less than currently loaned copies. Setting available to 0.");
+            availableStock = 0;
+        }
+        
+        return new BookDTO(existingBook.getId(), title, author, isbn, stock, availableStock);
     }
 
     public void showGoodbye() {

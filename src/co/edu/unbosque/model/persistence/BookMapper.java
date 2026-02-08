@@ -18,7 +18,8 @@ public class BookMapper {
         dto.setTitle(book.getTitle());
         dto.setAuthor(book.getAuthor());
         dto.setIsbn(book.getIsbn());
-        dto.setAvailable(book.isAvailable());
+        dto.setStock(book.getStock());
+        dto.setAvailableStock(book.getAvailableStock());
         
         return dto;
     }
@@ -33,7 +34,8 @@ public class BookMapper {
         book.setTitle(dto.getTitle());
         book.setAuthor(dto.getAuthor());
         book.setIsbn(dto.getIsbn());
-        book.setAvailable(dto.isAvailable());
+        book.setStock(dto.getStock());
+        book.setAvailableStock(dto.getAvailableStock());
         
         return book;
     }

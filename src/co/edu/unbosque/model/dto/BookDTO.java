@@ -5,17 +5,19 @@ public class BookDTO {
     private String title;
     private String author;
     private String isbn;
-    private boolean available;
+    private int stock;
+    private int availableStock;
 
     public BookDTO() {
     }
 
-    public BookDTO(String id, String title, String author, String isbn, boolean available) {
+    public BookDTO(String id, String title, String author, String isbn, int stock, int availableStock) {
         this.id = id;
         this.title = title;
         this.author = author;
         this.isbn = isbn;
-        this.available = available;
+        this.stock = stock;
+        this.availableStock = availableStock;
     }
 
     public String getId() {
@@ -50,12 +52,24 @@ public class BookDTO {
         this.isbn = isbn;
     }
 
-    public boolean isAvailable() {
-        return available;
+    public int getStock() {
+        return stock;
     }
 
-    public void setAvailable(boolean available) {
-        this.available = available;
+    public void setStock(int stock) {
+        this.stock = stock;
+    }
+
+    public int getAvailableStock() {
+        return availableStock;
+    }
+
+    public void setAvailableStock(int availableStock) {
+        this.availableStock = availableStock;
+    }
+
+    public boolean isAvailable() {
+        return availableStock > 0;
     }
 
     @Override
@@ -65,7 +79,8 @@ public class BookDTO {
                 ", title='" + title + '\'' +
                 ", author='" + author + '\'' +
                 ", isbn='" + isbn + '\'' +
-                ", available=" + available +
+                ", stock=" + stock +
+                ", availableStock=" + availableStock +
                 '}';
     }
 }

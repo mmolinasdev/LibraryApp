@@ -100,6 +100,8 @@ public class LibraryDAO {
         existingBook.setTitle(book.getTitle());
         existingBook.setAuthor(book.getAuthor());
         existingBook.setIsbn(book.getIsbn());
+        existingBook.setStock(book.getStock());
+        existingBook.setAvailableStock(book.getAvailableStock());
         saveBooks();
         return true;
     }
@@ -146,14 +148,14 @@ public class LibraryDAO {
         }
 
         Book book = findBookById(bookId);
-        if (book == null || !book.isAvailable()) {
+        if (book == null || book.getAvailableStock() <= 0) {
             return null;
         }
 
         String loanId = "L" + System.currentTimeMillis();
         Loan loan = new Loan(loanId, userId, bookId, LocalDate.now(), null, true);
         loans.add(loan);
-        book.setAvailable(false);
+        book.setAvailableStock(book.getAvailableStock() - 1);
         
         saveLoans();
         saveBooks();
@@ -173,7 +175,7 @@ public class LibraryDAO {
         Book book = findBookById(loan.getBookId());
 
         if (book != null) {
-            book.setAvailable(true);
+            book.setAvailableStock(book.getAvailableStock() + 1);
         }
 
         saveLoans();
