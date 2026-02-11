@@ -11,6 +11,7 @@ Sistema de gestión de biblioteca desarrollado en Java con persistencia en archi
 - 📖 **Gestión de Libros**: CRUD completo para libros
 - 📋 **Gestión de Préstamos**: Registro de préstamos y devoluciones
 - 🔍 **Sistema de Búsqueda**: Buscar usuarios por nombre, libros por título, préstamos por usuario
+- 📊 **Reportes en PDF**: Sistema de generación con plantilla institucional estandarizada (Universidad El Bosque, Facultad, fecha automática)
 - ☁️ **Sincronización Google Drive**: Colaboración en tiempo real entre miembros del equipo
 
 ### Características Técnicas
@@ -26,23 +27,38 @@ Sistema de gestión de biblioteca desarrollado en Java con persistencia en archi
 ## 🚀 Inicio Rápido
 
 ### Requisitos
-- Java JDK 8+
+- Java JDK 11+
+- Maven 3.6+ (para gestión de dependencias)
 - Google Drive Desktop (opcional, para trabajo en equipo)
 - IntelliJ IDEA (recomendado)
 
-### Opción 1: Trabajo Individual (Sin Google Drive)
+### Configuración Inicial (Primera vez)
 
 ```bash
-# Compilar
-javac -d bin -sourcepath src src/Main.java
-
-# Ejecutar
-java -cp bin Main
+# Descargar dependencias (PDFBox, FontBox, commons-logging)
+mvn clean install
 ```
 
-Los datos se guardan en la carpeta local `data/`.
+### Opción 1: Ejecutar con Maven
 
-### Opción 2: Trabajo en Equipo (Con Google Drive)
+```bash
+# Compilar y ejecutar
+mvn compile exec:java
+
+# O en dos pasos
+mvn compile
+mvn exec:java
+```
+
+### Opción 2: Ejecutar con IntelliJ IDEA
+
+1. **Abrir el proyecto** en IntelliJ
+2. IntelliJ **detectará automáticamente** el `pom.xml` y descargará dependencias
+3. **Run → Run 'Main'**
+
+Los datos se guardan en la carpeta local `data/` o en Google Drive si está configurado.
+
+### Trabajo en Equipo (Con Google Drive)
 
 **Ver guía completa:** `GOOGLE_DRIVE_SETUP.md`
 
@@ -50,7 +66,7 @@ Los datos se guardan en la carpeta local `data/`.
 1. Instalar Google Drive Desktop
 2. Aceptar invitación del líder
 3. Agregar shortcut a "Mi unidad"
-4. Ejecutar desde IntelliJ o terminal
+4. Ejecutar con Maven o IntelliJ
 
 **¡Detecta automáticamente Google Drive!** Sin configuración manual.
 
@@ -60,6 +76,7 @@ Los datos se guardan en la carpeta local `data/`.
 
 ```
 LibraryApp/
+├── pom.xml                                 # Configuración Maven (gestión automática de dependencias)
 ├── src/
 │   ├── Main.java                           # Punto de entrada
 │   └── co/edu/unbosque/
@@ -76,6 +93,9 @@ LibraryApp/
 │       │       ├── LibraryDAO.java         # Acceso a datos
 │       │       ├── *Mapper.java            # DTO ↔ Entity
 │       │       └── *FileMapper.java        # Entity ↔ File
+│       ├── utils/                          # Utilidades
+│       │   ├── DateFormatter.java
+│       │   └── PDFReportGenerator.java     # Generación de PDFs
 │       ├── view/                           # Interfaz de usuario
 │       │   └── ViewConsole.java
 │       └── controller/                     # Controladores
@@ -88,8 +108,14 @@ LibraryApp/
 │   ├── books.txt
 │   └── loans.txt
 │
+├── reports/                                # PDFs generados automáticamente
+│   └── report_*.pdf
+│
+├── target/                                 # Archivos compilados (Maven)
+│
 ├── README.md                               # Este archivo
-├── GOOGLE_DRIVE_SETUP.md                   # Guía de configuración de Google Drive
+├── REPORTS_GUIDE.md                        # Guía completa de reportes PDF
+├── GOOGLE_DRIVE_SETUP.md                   # Configuración de Google Drive
 └── DATA_DESIGN.md                          # Decisiones de diseño de datos
 ```
 
@@ -173,19 +199,14 @@ L001|12344567|B001|2026-02-04|null|true
 
 ### Compilar y Ejecutar
 
-**Desde IntelliJ IDEA:**
-1. Abrir proyecto
-2. Click derecho en `Main.java`
-3. "Run 'Main.main()'"
-
-**Desde Terminal:**
+**Opción 1: Maven (Recomendado)**
 ```bash
-# Compilar
-javac -d bin -sourcepath src src/Main.java
-
-# Ejecutar
-java -cp bin Main
+mvn compile exec:java
 ```
+
+**Opción 2: IntelliJ IDEA**
+1. IntelliJ detecta automáticamente `pom.xml` y descarga dependencias
+2. **Run → Run 'Main'**
 
 ### Menú Principal
 
@@ -196,9 +217,12 @@ java -cp bin Main
 3. Loan Management
 4. Search
 5. View Active Loans
+6. Generate Reports
 0. Exit
 ================================
 ```
+
+**Generación de Reportes:** 6 tipos de reportes con **plantilla institucional estandarizada**. Cada PDF incluye automáticamente: Universidad El Bosque, Facultad de Ingeniería, Bases de Datos I, nombre del sistema y fecha de generación. 1 reporte completo funcional (Usuarios por Dirección), 1 ejemplo de plantilla, 4 reportes pendientes para el equipo. Ver [`REPORTS_GUIDE.md`](REPORTS_GUIDE.md).
 
 ---
 
@@ -301,11 +325,9 @@ export LIBRARY_DATA_PATH="/ruta/completa/a/data/"
 
 ## 📚 Documentación Adicional
 
-### Guías de Configuración
-- [`GOOGLE_DRIVE_SETUP.md`](GOOGLE_DRIVE_SETUP.md) - Guía completa de configuración de Google Drive para trabajo en equipo
-
-### Diseño y Arquitectura
-- [`DATA_DESIGN.md`](DATA_DESIGN.md) - Decisiones de diseño de datos: estructura de archivos, atributos de entidades, relaciones, y justificación de decisiones técnicas
+- **[`REPORTS_GUIDE.md`](REPORTS_GUIDE.md)** - 📊 Guía completa de reportes PDF con Apache PDFBox (setup, implementación, trabajo en equipo)
+- **[`GOOGLE_DRIVE_SETUP.md`](GOOGLE_DRIVE_SETUP.md)** - ☁️ Configuración de Google Drive para colaboración en tiempo real
+- **[`DATA_DESIGN.md`](DATA_DESIGN.md)** - 🗄️ Decisiones de diseño: estructura de datos, atributos, relaciones
 
 ---
 
@@ -330,13 +352,14 @@ Si aparecen archivos como `users (conflicted copy).txt`:
 4. Eliminar archivo de conflicto
 5. Coordinar mejor con el equipo
 
-### Errores de compilación
+### Errores de compilación con Maven
 
 ```bash
 # Limpiar y recompilar
-rm -rf bin/*
-javac -d bin -sourcepath src src/Main.java
-java -cp bin Main
+mvn clean compile
+
+# Si hay problemas con dependencias
+mvn clean install -U
 ```
 
 ---
@@ -361,10 +384,12 @@ java -cp bin Main
 
 ## 📊 Estadísticas del Proyecto
 
-- **Lenguaje:** Java 8+
+- **Lenguaje:** Java 11+
+- **Gestión de dependencias:** Maven
 - **Líneas de código:** ~2,500+
-- **Clases:** 17
-- **Patrones de diseño:** 5
+- **Clases:** 24
+- **Patrones de diseño:** MVC, DAO, DTO, Facade
+- **Librerías externas:** Apache PDFBox 2.0.30
 - **Formato de archivos:** Pipe-separated values (`.txt`)
 - **Sistemas operativos:** macOS, Windows, Linux
 
@@ -378,14 +403,24 @@ Proyecto educativo - Universidad El Bosque - 2026
 
 ## 🎉 ¡Listo para usar!
 
-**Trabajo individual:**
+**Inicio rápido:**
 ```bash
-javac -d bin -sourcepath src src/Main.java && java -cp bin Main
+# Descargar dependencias (solo primera vez)
+mvn clean install
+
+# Ejecutar
+mvn compile exec:java
 ```
 
+**IntelliJ IDEA:**
+1. Abrir proyecto (IntelliJ detecta Maven automáticamente)
+2. **Run → Run 'Main'**
+
 **Trabajo en equipo:**
-1. Configurar Google Drive (ver `GOOGLE_DRIVE_SETUP.md`)
-2. Ejecutar desde IntelliJ o terminal
-3. La app detecta automáticamente Google Drive
+- Ver guía completa en [`GOOGLE_DRIVE_SETUP.md`](GOOGLE_DRIVE_SETUP.md)
+- La app detecta automáticamente Google Drive
+
+**Reportes PDF:**
+- Ver [`REPORTS_GUIDE.md`](REPORTS_GUIDE.md) para implementar los 5 reportes pendientes
 
 **¡Happy coding! 📚✨**
