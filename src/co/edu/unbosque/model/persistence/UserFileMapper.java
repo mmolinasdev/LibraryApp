@@ -1,6 +1,7 @@
 package co.edu.unbosque.model.persistence;
 
 import co.edu.unbosque.model.User;
+import co.edu.unbosque.utils.DateFormatter;
 
 import java.time.LocalDate;
 
@@ -48,10 +49,12 @@ public class UserFileMapper {
         if (user == null) {
             return "";
         }
-        
-        String birthDateStr = user.getBirthDate() != null ? user.getBirthDate().toString() : "";
+
+        String birthDateStr = user.getBirthDate() != null ? 
+                             DateFormatter.convertDateForFileStorage(user.getBirthDate()) : "";
+
         String registrationDateStr = user.getRegistrationDate() != null ? 
-                                     user.getRegistrationDate().toString() : "";
+                                    user.getRegistrationDate().toString() : "";
         
         return user.getId() + DELIMITER + 
                user.getName() + DELIMITER + 
