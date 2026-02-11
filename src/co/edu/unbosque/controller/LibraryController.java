@@ -2,6 +2,7 @@ package co.edu.unbosque.controller;
 
 import co.edu.unbosque.controller.facade.Library;
 import co.edu.unbosque.model.dto.*;
+import co.edu.unbosque.utils.PDFReportGenerator;
 import co.edu.unbosque.view.ViewConsole;
 
 import java.util.List;
@@ -38,6 +39,9 @@ public class LibraryController {
                     break;
                 case 5:
                     handleViewActiveLoans();
+                    break;
+                case 6:
+                    handleReports();
                     break;
                 case 0:
                     exit = true;
@@ -310,5 +314,154 @@ public class LibraryController {
         List<BookDTO> books = library.getAllBooks();
         
         view.showLoansWithDetails(activeLoans, users, books);
+    }
+
+    private void handleReports() {
+        boolean backToMainMenu = false;
+
+        while (!backToMainMenu) {
+            int option = view.showReportsMenu();
+            
+            switch (option) {
+                case 1:
+                    generateUsersByAddressReport();
+                    break;
+                case 2:
+                    generateLoansByMonthReport();
+                    break;
+                case 3:
+                    generateOverdueLoansReport();
+                    break;
+                case 4:
+                    generateInactiveUsersReport();
+                    break;
+                case 5:
+                    generateBirthdayUsersReport();
+                    break;
+                case 6:
+                    generateExampleReport();
+                    break;
+                case 0:
+                    backToMainMenu = true;
+                    break;
+                default:
+                    view.showError("Invalid option.");
+            }
+        }
+    }
+
+    private void generateUsersByAddressReport() {
+        view.showMessage("\n--- Users by Address Report ---");
+        String address = view.readString("Enter address to search: ");
+        
+        try {
+            List<UserDTO> allUsers = library.getAllUsers();
+            List<UserDTO> filteredUsers = allUsers.stream()
+                .filter(u -> u.getAddress().toLowerCase().contains(address.toLowerCase()))
+                .collect(java.util.stream.Collectors.toList());
+            
+            if (filteredUsers.isEmpty()) {
+                view.showMessage("No users found at address: " + address);
+                return;
+            }
+            
+            String fileName = PDFReportGenerator.generateUsersByAddressReport(filteredUsers, address);
+
+            view.showSuccess("PDF report generated successfully!");
+            view.showMessage("File: " + fileName);
+            view.showMessage("Open the PDF file with any PDF reader.");
+        } catch (UnsupportedOperationException e) {
+            view.showError("Report not implemented yet.");
+            view.showMessage("TODO: Assigned team member should implement this in PDFReportGenerator.java");
+        } catch (Exception e) {
+            view.showError("Failed to generate report: " + e.getMessage());
+        }
+    }
+
+    private void generateLoansByMonthReport() {
+        view.showMessage("\n--- Books Loaned by Month Report ---");
+        int year = view.readInt("Enter year (e.g., 2024): ");
+        int month = view.readInt("Enter month (1-12): ");
+        
+        if (month < 1 || month > 12) {
+            view.showError("Invalid month. Please enter a value between 1 and 12.");
+            return;
+        }
+        
+        // TODO: Implement business logic here
+        // 1. Get data: library.getAllLoans(), library.getAllBooks()
+        // 2. Filter loans by year and month
+        // 3. Check if empty
+        // 4. Call: PDFReportGenerator.generateLoansByMonthReport(filteredLoans, allBooks, year, month)
+        view.showError("Report not implemented yet.");
+        view.showMessage("TODO: Assigned team member should implement filtering logic and call PDFReportGenerator");
+    }
+
+    private void generateOverdueLoansReport() {
+        view.showMessage("\n--- Overdue Loans Report ---");
+        
+        // TODO: Implement business logic here
+        // 1. Get data: library.getAllLoans(), library.getAllUsers(), library.getAllBooks()
+        // 2. Get today's date: LocalDate.now()
+        // 3. Filter loans: loan.isActive() && returnDate.isBefore(today)
+        // 4. Check if empty
+        // 5. Call: PDFReportGenerator.generateOverdueLoansReport(overdueLoans, allUsers, allBooks)
+        view.showError("Report not implemented yet.");
+        view.showMessage("TODO: Assigned team member should implement filtering logic and call PDFReportGenerator");
+    }
+
+    private void generateInactiveUsersReport() {
+        view.showMessage("\n--- Inactive Users Report ---");
+        
+        // TODO: Implement business logic here
+        // 1. Get data: library.getAllUsers(), library.getAllLoans()
+        // 2. Calculate date: LocalDate.now().minusDays(30)
+        // 3. Get Set<String> of active userIds (who borrowed in last 30 days)
+        // 4. Filter users NOT in activeUserIds
+        // 5. Check if empty
+        // 6. Call: PDFReportGenerator.generateInactiveUsersReport(inactiveUsers)
+        view.showError("Report not implemented yet.");
+        view.showMessage("TODO: Assigned team member should implement filtering logic and call PDFReportGenerator");
+    }
+
+    private void generateBirthdayUsersReport() {
+        view.showMessage("\n--- Users with Birthdays Report ---");
+        int month = view.readInt("Enter month (1-12): ");
+        
+        if (month < 1 || month > 12) {
+            view.showError("Invalid month. Please enter a value between 1 and 12.");
+            return;
+        }
+        
+        // TODO: Implement business logic here
+        // 1. Get data: library.getAllUsers()
+        // 2. Filter users by birth month (use DateFormatter.parseTextDateToLocalDate())
+        // 3. Sort by day of month
+        // 4. Check if empty
+        // 5. Call: PDFReportGenerator.generateBirthdayUsersReport(birthdayUsers, month)
+        view.showError("Report not implemented yet.");
+        view.showMessage("TODO: Assigned team member should implement filtering logic and call PDFReportGenerator");
+    }
+
+    private void generateExampleReport() {
+        view.showMessage("\n--- Example Report (Demo) ---");
+        view.showMessage("Generating PDF report with sample data...");
+        
+        try {
+            String fileName = PDFReportGenerator.generateExampleReport();
+            view.showSuccess("Example PDF report generated successfully!");
+            view.showMessage("File: " + fileName);
+            view.showMessage("Open the PDF file with any PDF reader.");
+        } catch (UnsupportedOperationException e) {
+            view.showError("PDF generation not configured yet.");
+            view.showMessage("");
+            view.showMessage("Please follow these steps:");
+            view.showMessage("1. Download PDFBox JARs (see PDF_SETUP.md)");
+            view.showMessage("2. Add JARs to lib/ folder");
+            view.showMessage("3. Uncomment code in PDFReportGenerator.java");
+            view.showMessage("4. Recompile with: javac -cp \"lib/*:src\" -d bin -sourcepath src src/Main.java");
+        } catch (Exception e) {
+            view.showError("Failed to generate report: " + e.getMessage());
+        }
     }
 }

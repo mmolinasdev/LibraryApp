@@ -29,7 +29,8 @@ public class UserFileMapper {
             user.setPhone(fields[3]);
             user.setAddress(fields[4]);
             
-            LocalDate birthDate = fields[5].isEmpty() ? null : LocalDate.parse(fields[5]);
+            LocalDate birthDate = fields[5].isEmpty() ? null : 
+                                DateFormatter.parseTextDateToLocalDate(fields[5]);
             user.setBirthDate(birthDate);
             
             LocalDate registrationDate = fields[6].isEmpty() ? null : LocalDate.parse(fields[6]);

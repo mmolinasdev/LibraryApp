@@ -112,4 +112,55 @@ public class DateFormatter {
     public static String convertDateWithCurrentTimestamp(String dateString) {
         return convertDateForFileStorage(dateString);
     }
+    
+    public static LocalDate parseTextDateToLocalDate(String textDate) {
+        if (textDate == null || textDate.isEmpty()) {
+            return null;
+        }
+        
+        try {
+            int firstDe = textDate.indexOf(" de ");
+            if (firstDe == -1) return null;
+            
+            int secondDe = textDate.indexOf(" de ", firstDe + 4);
+            if (secondDe == -1) return null;
+            
+            String dayText = textDate.substring(0, firstDe).trim();
+            String monthText = textDate.substring(firstDe + 4, secondDe).trim();
+            String restOfDate = textDate.substring(secondDe + 4).trim();
+            
+            String yearText = restOfDate.split(" ")[0];
+            int year = Integer.parseInt(yearText);
+            
+            int day = parseDayFromText(dayText);
+            if (day == -1) return null;
+            
+            int month = parseMonthFromText(monthText);
+            if (month == -1) return null;
+            
+            return LocalDate.of(year, month, day);
+            
+        } catch (Exception e) {
+            System.err.println("Error parsing text date: " + textDate + " - " + e.getMessage());
+            return null;
+        }
+    }
+    
+    private static int parseDayFromText(String dayText) {
+        for (int i = 1; i < DAYS.length; i++) {
+            if (DAYS[i].equalsIgnoreCase(dayText)) {
+                return i;
+            }
+        }
+        return -1;
+    }
+    
+    private static int parseMonthFromText(String monthText) {
+        for (int i = 1; i < MONTHS.length; i++) {
+            if (MONTHS[i].equalsIgnoreCase(monthText)) {
+                return i;
+            }
+        }
+        return -1;
+    }
 }

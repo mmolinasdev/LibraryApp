@@ -234,6 +234,7 @@ public class ViewConsole {
         System.out.println("3. Loan Management");
         System.out.println("4. Search");
         System.out.println("5. View Active Loans");
+        System.out.println("6. Generate Reports");
         System.out.println("0. Exit");
         System.out.println("================================");
         return readInt("Select an option: ");
@@ -278,6 +279,19 @@ public class ViewConsole {
         System.out.println("3. Search Loans by User");
         System.out.println("0. Back to Main Menu");
         System.out.println("==============================");
+        return readInt("Select an option: ");
+    }
+
+    public int showReportsMenu() {
+        System.out.println("\n======== GENERATE REPORTS ========");
+        System.out.println("1. Users Living at Address");
+        System.out.println("2. Books Loaned by Month");
+        System.out.println("3. Users with Overdue Loans");
+        System.out.println("4. Inactive Users (No Loans Last Month)");
+        System.out.println("5. Users with Birthdays in Month");
+        System.out.println("6. Generate Example Report (Demo)");
+        System.out.println("0. Back to Main Menu");
+        System.out.println("==================================");
         return readInt("Select an option: ");
     }
 
