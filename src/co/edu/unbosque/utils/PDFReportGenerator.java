@@ -454,8 +454,119 @@ public class PDFReportGenerator {
      * TIP: Parse date with DateFormatter.parseTextDateToLocalDate(user.getBirthDate())
      * TIP: Calculate age = LocalDate.now().getYear() - birthDate.getYear()
      */
+
     public static String generateBirthdayUsersReport(List<UserDTO> birthdayUsers, int month) {
-        // TODO: Implement this method
-        throw new UnsupportedOperationException("Report not implemented yet. Assigned to: [Team Member Name]");
+        new File(REPORTS_FOLDER).mkdirs();
+        String fileName = REPORTS_FOLDER + "/birthday_users_" + month + "_" + System.currentTimeMillis() + ".pdf";
+
+        String monthName;
+        try {
+            monthName = java.time.Month.of(month)
+                    .getDisplayName(java.time.format.TextStyle.FULL, new java.util.Locale("es", "CO"));
+        } catch (Exception e) {
+            monthName = String.valueOf(month);
+        }
+        if (monthName != null && !monthName.isEmpty()) {
+            monthName = monthName.substring(0, 1).toUpperCase() + monthName.substring(1);
+        }
+
+        try (PDDocument document = new PDDocument()) {
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+            float yPosition = addReportHeader(contentStream, page, "Cumpleanos del Mes: " + monthName);
+
+            // Summary
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE + 2);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(MARGIN, yPosition);
+            contentStream.showText("Resumen");
+            contentStream.endText();
+            yPosition -= 20;
+
+            contentStream.setFont(PDType1Font.HELVETICA, FONT_SIZE);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(MARGIN, yPosition);
+            contentStream.showText("Total de usuarios: " + (birthdayUsers == null ? 0 : birthdayUsers.size()));
+            contentStream.endText();
+            yPosition -= 30;
+
+            // List title
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(MARGIN, yPosition);
+            contentStream.showText("Usuarios que cumplen años este mes");
+            contentStream.endText();
+            yPosition -= 25;
+
+            java.time.format.DateTimeFormatter birthFmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            java.time.LocalDate today = java.time.LocalDate.now();
+
+            if (birthdayUsers != null) {
+                for (UserDTO user : birthdayUsers) {
+                    if (user == null) continue;
+
+                    // New page if needed
+                    if (yPosition < MARGIN + 110) {
+                        contentStream.close();
+                        page = new PDPage(PDRectangle.A4);
+                        document.addPage(page);
+                        contentStream = new PDPageContentStream(document, page);
+                        yPosition = addReportHeader(contentStream, page, "Cumpleaños del Mes: " + monthName);
+                        yPosition -= 10;
+                    }
+
+                    String name = user.getName() == null ? "" : user.getName();
+                    String email = user.getEmail() == null ? "" : user.getEmail();
+                    String birthStr = user.getBirthDate() == null ? "" : user.getBirthDate().trim();
+
+                    java.time.LocalDate birthDate = null;
+                    try {
+                        if (!birthStr.isEmpty()) birthDate = java.time.LocalDate.parse(birthStr);
+                    } catch (Exception ignored) { }
+
+                    String birthDisplay = birthDate == null ? "N/A" : birthDate.format(birthFmt);
+                    String ageDisplay = "N/A";
+                    if (birthDate != null) {
+                        int age = java.time.Period.between(birthDate, today).getYears();
+                        if (age < 0) age = 0;
+                        ageDisplay = String.valueOf(age);
+                    }
+
+                    // Name (bold)
+                    contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE);
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(MARGIN, yPosition);
+                    contentStream.showText(name);
+                    contentStream.endText();
+                    yPosition -= LINE_HEIGHT;
+
+                    // Birthday + age
+                    contentStream.setFont(PDType1Font.HELVETICA, FONT_SIZE);
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(MARGIN + 10, yPosition);
+                    contentStream.showText("Cumpleaños: " + birthDisplay + " | Edad: " + ageDisplay);
+                    contentStream.endText();
+                    yPosition -= LINE_HEIGHT;
+
+                    // Email
+                    contentStream.beginText();
+                    contentStream.newLineAtOffset(MARGIN + 10, yPosition);
+                    contentStream.showText("Email: " + email);
+                    contentStream.endText();
+                    yPosition -= 22;
+                }
+            }
+
+            contentStream.close();
+            document.save(fileName);
+            return fileName;
+
+        } catch (IOException e) {
+            System.err.println("Error generating birthday users PDF: " + e.getMessage());
+            return null;
+        }
     }
+
 }

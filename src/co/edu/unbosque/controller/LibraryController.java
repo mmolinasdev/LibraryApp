@@ -427,21 +427,68 @@ public class LibraryController {
     private void generateBirthdayUsersReport() {
         view.showMessage("\n--- Users with Birthdays Report ---");
         int month = view.readInt("Enter month (1-12): ");
-        
+
         if (month < 1 || month > 12) {
             view.showError("Invalid month. Please enter a value between 1 and 12.");
             return;
         }
-        
-        // TODO: Implement business logic here
-        // 1. Get data: library.getAllUsers()
-        // 2. Filter users by birth month (use DateFormatter.parseTextDateToLocalDate())
-        // 3. Sort by day of month
-        // 4. Check if empty
-        // 5. Call: PDFReportGenerator.generateBirthdayUsersReport(birthdayUsers, month)
-        view.showError("Report not implemented yet.");
-        view.showMessage("TODO: Assigned team member should implement filtering logic and call PDFReportGenerator");
+
+        // NOTE: UserDTO birthDate comes in ISO format (yyyy-MM-dd) from UserMapper.toDTO().
+        // Therefore, we must parse with LocalDate.parse(...) (NOT DateFormatter.parseTextDateToLocalDate).
+
+        List<UserDTO> allUsers = library.getAllUsers();
+        if (allUsers == null || allUsers.isEmpty()) {
+            view.showError("No users found in the system.");
+            return;
+        }
+
+        List<UserDTO> birthdayUsers = new java.util.ArrayList<>();
+        for (UserDTO user : allUsers) {
+            if (user == null) continue;
+            String birthDateStr = user.getBirthDate();
+            if (birthDateStr == null || birthDateStr.trim().isEmpty()) continue;
+
+            try {
+                java.time.LocalDate birthDate = java.time.LocalDate.parse(birthDateStr.trim());
+                if (birthDate.getMonthValue() == month) {
+                    birthdayUsers.add(user);
+                }
+            } catch (Exception ignored) {
+                // Skip malformed dates instead of crashing the report.
+            }
+        }
+
+        if (birthdayUsers.isEmpty()) {
+            view.showError("No users with birthdays found for month: " + month);
+            return;
+        }
+
+        // Sort by day of month, then by name
+        birthdayUsers.sort((u1, u2) -> {
+            try {
+                int d1 = java.time.LocalDate.parse(u1.getBirthDate()).getDayOfMonth();
+                int d2 = java.time.LocalDate.parse(u2.getBirthDate()).getDayOfMonth();
+                if (d1 != d2) return Integer.compare(d1, d2);
+            } catch (Exception ignored) { }
+
+            String n1 = u1.getName() == null ? "" : u1.getName();
+            String n2 = u2.getName() == null ? "" : u2.getName();
+            return n1.compareToIgnoreCase(n2);
+        });
+
+        try {
+            String fileName = PDFReportGenerator.generateBirthdayUsersReport(birthdayUsers, month);
+            if (fileName == null) {
+                view.showError("Failed to generate report.");
+                return;
+            }
+            view.showSuccess("Birthday users report generated successfully!");
+            view.showMessage("File: " + fileName);
+        } catch (Exception e) {
+            view.showError("Failed to generate report: " + e.getMessage());
+        }
     }
+
 
     private void generateExampleReport() {
         view.showMessage("\n--- Example Report (Demo) ---");
