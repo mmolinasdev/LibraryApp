@@ -8,7 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
@@ -369,7 +371,7 @@ public class PDFReportGenerator {
     
     /**
      * TODO: REPORT 2 - Books Loaned by Month
-     * ASSIGNED TO: [Team Member Name]
+     * ASSIGNED TO: [Grupo 3 de Marianita]
      * 
      * @param filteredLoans Loans already filtered by Controller
      * @param allBooks All books (for lookup by ID)
@@ -388,8 +390,116 @@ public class PDFReportGenerator {
      */
     public static String generateLoansByMonthReport(List<LoanDTO> filteredLoans, List<BookDTO> allBooks, 
                                                     int year, int month) {
-        // TODO: Implement this method
-        throw new UnsupportedOperationException("Report not implemented yet. Assigned to: [Team Member Name]");
+        new File(REPORTS_FOLDER).mkdirs();
+        String fileName = REPORTS_FOLDER + "/loans_by_month_" + year + "_" + month + "_"
+                + System.currentTimeMillis() + ".pdf";
+
+        try (PDDocument document = new PDDocument()) {
+
+            PDPage page = new PDPage(PDRectangle.A4);
+            document.addPage(page);
+
+            PDPageContentStream contentStream = new PDPageContentStream(document, page);
+
+            // Get month name in Spanish
+            String monthName = LocalDate.of(year, month, 1)
+                    .getMonth()
+                    .getDisplayName(TextStyle.FULL, new Locale("es", "ES"));
+
+            // Add institutional header
+            float yPosition = addReportHeader(contentStream, page,
+                    "Libros Prestados - " + monthName + " " + year);
+
+            // ==========================
+            // SUMMARY
+            // ==========================
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE + 2);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(MARGIN, yPosition);
+            contentStream.showText("Resumen");
+            contentStream.endText();
+            yPosition -= 20;
+
+            contentStream.setFont(PDType1Font.HELVETICA, FONT_SIZE);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(MARGIN, yPosition);
+            contentStream.showText("Total de prestamos en el mes: " + filteredLoans.size());
+            contentStream.endText();
+            yPosition -= 30;
+
+            // ==========================
+            // LOANS LIST
+            // ==========================
+            contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE);
+            contentStream.beginText();
+            contentStream.newLineAtOffset(MARGIN, yPosition);
+            contentStream.showText("Detalle de Prestamos");
+            contentStream.endText();
+            yPosition -= 25;
+
+            for (LoanDTO loan : filteredLoans) {
+
+                // Check pagination
+                if (yPosition < MARGIN + 100) {
+                    contentStream.close();
+                    page = new PDPage(PDRectangle.A4);
+                    document.addPage(page);
+                    contentStream = new PDPageContentStream(document, page);
+                    yPosition = page.getMediaBox().getHeight() - MARGIN;
+                }
+
+                // Find book by ID
+                BookDTO book = allBooks.stream()
+                        .filter(b -> b.getId().equals(loan.getBookId()))
+                        .findFirst()
+                        .orElse(null);
+
+                String bookTitle = (book != null) ? book.getTitle() : "Libro no encontrado";
+
+                // Loan ID + Book title (bold)
+                contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(MARGIN, yPosition);
+                contentStream.showText("Prestamo ID: " + loan.getId() + " - " + bookTitle);
+                contentStream.endText();
+                yPosition -= LINE_HEIGHT;
+
+                // User ID
+                contentStream.setFont(PDType1Font.HELVETICA, FONT_SIZE);
+                contentStream.beginText();
+                contentStream.newLineAtOffset(MARGIN + 10, yPosition);
+                contentStream.showText("Usuario ID: " + loan.getUserId());
+                contentStream.endText();
+                yPosition -= LINE_HEIGHT;
+
+                // Loan Date formatted
+                LocalDate date = LocalDate.parse(loan.getLoanDate());
+                String formattedDate = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+
+                contentStream.beginText();
+                contentStream.newLineAtOffset(MARGIN + 10, yPosition);
+                contentStream.showText("Fecha de Prestamo: " + formattedDate);
+                contentStream.endText();
+                yPosition -= LINE_HEIGHT;
+
+                // Status
+                String status = loan.isActive() ? "Activo" : "Finalizado";
+                contentStream.beginText();
+                contentStream.newLineAtOffset(MARGIN + 10, yPosition);
+                contentStream.showText("Estado: " + status);
+                contentStream.endText();
+                yPosition -= 25;
+            }
+
+            contentStream.close();
+            document.save(fileName);
+
+            return fileName;
+
+        } catch (IOException e) {
+            System.err.println("Error generating PDF: " + e.getMessage());
+            return null;
+        }
     }
     
     /**
