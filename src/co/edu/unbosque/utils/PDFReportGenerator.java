@@ -545,25 +545,25 @@ public class PDFReportGenerator {
         // TODO: Implement this method
         throw new UnsupportedOperationException("Report not implemented yet. Assigned to: [Team Member Name]");
     }
-    
+
     /**
-     * TODO: REPORT 5 - Users with Birthdays in Specific Month
-     * ASSIGNED TO: [Team Member Name]
-     * 
-     * @param birthdayUsers Users already filtered and sorted by Controller
+     * REPORT 5 - Users with Birthdays in Specific Month
+     *
+     * @param birthdayUsers Users already filtered and sorted by Controller (birthDate in ISO yyyy-MM-dd)
      * @param month Month for title
      * @return PDF file path or null
-     * 
+     *
      * STEPS:
      * 1. Create PDDocument, PDPage, PDPageContentStream
      * 2. Add header: addReportHeader(contentStream, page, "Cumpleanos del Mes: " + monthName)
-     * 3. Add summary: "Total usuarios: [birthdayUsers.size()]"
-     * 4. Loop users: write Name, Birthday, Age, Email
+     * 3. Add summary: "Total de usuarios: [birthdayUsers.size()]"
+     * 4. Loop users: write Name, Birthday (formatted), Age, Email (handle pagination)
      * 5. Save document
-     * 
-     * TIP: Parse date with DateFormatter.parseTextDateToLocalDate(user.getBirthDate())
-     * TIP: Calculate age = LocalDate.now().getYear() - birthDate.getYear()
+     *
+     * TIP: Parse ISO date with LocalDate.parse(user.getBirthDate()).
+     * TIP: Calculate age with Period.between(birthDate, LocalDate.now()).getYears().
      */
+
 
     public static String generateBirthdayUsersReport(List<UserDTO> birthdayUsers, int month) {
         new File(REPORTS_FOLDER).mkdirs();
@@ -610,14 +610,15 @@ public class PDFReportGenerator {
             contentStream.endText();
             yPosition -= 25;
 
-            java.time.format.DateTimeFormatter birthFmt = java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy");
-            java.time.LocalDate today = java.time.LocalDate.now();
+            DateTimeFormatter birthFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+            LocalDate today = LocalDate.now();
+
 
             if (birthdayUsers != null) {
                 for (UserDTO user : birthdayUsers) {
                     if (user == null) continue;
 
-                    // New page if needed
+
                     if (yPosition < MARGIN + 110) {
                         contentStream.close();
                         page = new PDPage(PDRectangle.A4);
@@ -631,9 +632,10 @@ public class PDFReportGenerator {
                     String email = user.getEmail() == null ? "" : user.getEmail();
                     String birthStr = user.getBirthDate() == null ? "" : user.getBirthDate().trim();
 
-                    java.time.LocalDate birthDate = null;
+                    LocalDate birthDate = null;
+
                     try {
-                        if (!birthStr.isEmpty()) birthDate = java.time.LocalDate.parse(birthStr);
+                        if (!birthStr.isEmpty()) birthDate = LocalDate.parse(birthStr);
                     } catch (Exception ignored) { }
 
                     String birthDisplay = birthDate == null ? "N/A" : birthDate.format(birthFmt);
@@ -644,7 +646,7 @@ public class PDFReportGenerator {
                         ageDisplay = String.valueOf(age);
                     }
 
-                    // Name (bold)
+                    // Name
                     contentStream.setFont(PDType1Font.HELVETICA_BOLD, FONT_SIZE);
                     contentStream.beginText();
                     contentStream.newLineAtOffset(MARGIN, yPosition);
@@ -652,7 +654,7 @@ public class PDFReportGenerator {
                     contentStream.endText();
                     yPosition -= LINE_HEIGHT;
 
-                    // Birthday + age
+                    // Birthday
                     contentStream.setFont(PDType1Font.HELVETICA, FONT_SIZE);
                     contentStream.beginText();
                     contentStream.newLineAtOffset(MARGIN + 10, yPosition);

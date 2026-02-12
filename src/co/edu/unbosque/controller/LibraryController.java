@@ -629,6 +629,7 @@ public class LibraryController {
     }
 
     private void generateBirthdayUsersReport() {
+
         view.showMessage("\n--- Users with Birthdays Report ---");
         int month = view.readInt("Enter month (1-12): ");
 
@@ -637,8 +638,6 @@ public class LibraryController {
             return;
         }
 
-        // NOTE: UserDTO birthDate comes in ISO format (yyyy-MM-dd) from UserMapper.toDTO().
-        // Therefore, we must parse with LocalDate.parse(...) (NOT DateFormatter.parseTextDateToLocalDate).
 
         List<UserDTO> allUsers = library.getAllUsers();
         if (allUsers == null || allUsers.isEmpty()) {
@@ -653,12 +652,12 @@ public class LibraryController {
             if (birthDateStr == null || birthDateStr.trim().isEmpty()) continue;
 
             try {
-                java.time.LocalDate birthDate = java.time.LocalDate.parse(birthDateStr.trim());
+                LocalDate birthDate = LocalDate.parse(birthDateStr.trim());
                 if (birthDate.getMonthValue() == month) {
                     birthdayUsers.add(user);
                 }
             } catch (Exception ignored) {
-                // Skip malformed dates instead of crashing the report.
+
             }
         }
 
@@ -667,11 +666,11 @@ public class LibraryController {
             return;
         }
 
-        // Sort by day of month, then by name
+
         birthdayUsers.sort((u1, u2) -> {
             try {
-                int d1 = java.time.LocalDate.parse(u1.getBirthDate()).getDayOfMonth();
-                int d2 = java.time.LocalDate.parse(u2.getBirthDate()).getDayOfMonth();
+                int d1 = LocalDate.parse(u1.getBirthDate()).getDayOfMonth();
+                int d2 = LocalDate.parse(u2.getBirthDate()).getDayOfMonth();
                 if (d1 != d2) return Integer.compare(d1, d2);
             } catch (Exception ignored) { }
 
