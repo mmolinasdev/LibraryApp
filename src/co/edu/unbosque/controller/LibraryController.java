@@ -1,25 +1,26 @@
 package co.edu.unbosque.controller;
 
-import co.edu.unbosque.controller.facade.Library;
-import co.edu.unbosque.model.dto.*;
-import co.edu.unbosque.utils.PDFReportGenerator;
-import co.edu.unbosque.view.ViewConsole;
-import java.time.LocalDate;
-
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.util.ArrayList;
-import java.util.List;
+import co.edu.unbosque.controller.facade.Library;
+import co.edu.unbosque.model.dto.BookDTO;
+import co.edu.unbosque.model.dto.LoanDTO;
+import co.edu.unbosque.model.dto.UserDTO;
+import co.edu.unbosque.utils.PDFReportGenerator;
+import co.edu.unbosque.view.ViewConsole;
 
-public class    LibraryController {
+public class LibraryController {
     private Library library;
     private ViewConsole view;
 
