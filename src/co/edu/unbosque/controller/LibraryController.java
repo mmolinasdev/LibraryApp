@@ -657,7 +657,7 @@ public class LibraryController {
                     birthdayUsers.add(user);
                 }
             } catch (Exception ignored) {
-
+                // Skip malformed dates instead of crashing the report.
             }
         }
 
