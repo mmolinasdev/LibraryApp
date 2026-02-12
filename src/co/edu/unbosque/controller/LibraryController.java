@@ -1,11 +1,24 @@
 package co.edu.unbosque.controller;
 
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import co.edu.unbosque.controller.facade.Library;
-import co.edu.unbosque.model.dto.*;
+import co.edu.unbosque.model.dto.BookDTO;
+import co.edu.unbosque.model.dto.LoanDTO;
+import co.edu.unbosque.model.dto.UserDTO;
 import co.edu.unbosque.utils.PDFReportGenerator;
 import co.edu.unbosque.view.ViewConsole;
-
-import java.util.List;
 
 public class LibraryController {
     private Library library;
@@ -74,6 +87,12 @@ public class LibraryController {
                 case 4:
                     listAllUsers();
                     break;
+                case 5:
+                    searchInfoAddressUser();
+                    break;
+                case 6:
+                    filterUsersByAddress();
+                    break;
                 case 0:
                     backToMainMenu = true;
                     break;
@@ -125,6 +144,164 @@ public class LibraryController {
     private void listAllUsers() {
         List<UserDTO> users = library.getAllUsers();
         view.showUsers(users);
+    }
+
+    public void searchInfoAddressUser() {
+
+        listAllUsers();
+        List<UserDTO> users = library.getAllUsers();
+
+        String idUser = view.readString(
+                "Choose the user whose address information you want to know (enter their ID): "
+        ).trim();
+
+        UserDTO selectedUser = null;
+
+        for (UserDTO user : users) {
+            if (user.getId().equalsIgnoreCase(idUser)) {
+                selectedUser = user;
+                break;
+            }
+        }
+
+        if (selectedUser == null) {
+            view.showError("User not found.");
+            return;
+        }
+
+        try {
+
+            String address = selectedUser.getAddress();
+
+            // 🔹 Dividir por comas
+            String[] parts = address.split(",");
+
+            if (parts.length < 3) {
+                view.showError("Stored address does not have enough parts.");
+                return;
+            }
+
+            // 🔹 Tomar primera y últimas dos posiciones
+            String firstPart = parts[0].trim();
+            String cityOrState = parts[parts.length - 2].trim();
+            String country = parts[parts.length - 1].trim();
+
+            // 🔹 Construir query
+            String query = firstPart + ", " + cityOrState + ", " + country;
+
+            String url = "https://nominatim.openstreetmap.org/search?"
+                    + "q=" + URLEncoder.encode(query, StandardCharsets.UTF_8)
+                    + "&format=jsonv2"
+                    + "&addressdetails=1"
+                    + "&limit=1"
+                    + "&countrycodes=co";
+
+            HttpClient client = HttpClient.newHttpClient();
+
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .header("User-Agent", "LibraryApp/1.0 (tuemail@dominio.com)")
+                    .GET()
+                    .build();
+
+            HttpResponse<String> response =
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            if (response.statusCode() != 200) {
+                view.showError("Service error: " + response.statusCode());
+                return;
+            }
+
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode root = mapper.readTree(response.body());
+
+            if (root.isEmpty()) {
+                view.showError("Address not found in Nominatim.");
+                return;
+            }
+
+            JsonNode result = root.get(0);
+            JsonNode addressNode = result.path("address");
+
+            view.showMessage("\n--- NOMINATIM ADDRESS INFORMATION ---");
+
+            if (addressNode.has("road"))
+                view.showMessage("Street/Road: " + addressNode.get("road").asText());
+
+            if (addressNode.has("house_number"))
+                view.showMessage("House Number: " + addressNode.get("house_number").asText());
+
+            if (addressNode.has("neighbourhood"))
+                view.showMessage("Neighbourhood: " + addressNode.get("neighbourhood").asText());
+
+            if (addressNode.has("suburb"))
+                view.showMessage("Locality/Suburb: " + addressNode.get("suburb").asText());
+
+            if (addressNode.has("city"))
+                view.showMessage("City: " + addressNode.get("city").asText());
+
+            if (addressNode.has("town"))
+                view.showMessage("Town: " + addressNode.get("town").asText());
+
+            if (addressNode.has("village"))
+                view.showMessage("Village: " + addressNode.get("village").asText());
+
+            if (addressNode.has("state"))
+                view.showMessage("State/Department: " + addressNode.get("state").asText());
+
+            if (addressNode.has("postcode"))
+                view.showMessage("Postal Code: " + addressNode.get("postcode").asText());
+
+            if (addressNode.has("country"))
+                view.showMessage("Country: " + addressNode.get("country").asText());
+
+        } catch (Exception e) {
+            view.showError("Connection error while retrieving address information.");
+        }
+    }
+
+    public void filterUsersByAddress() {
+
+        List<UserDTO> users = library.getAllUsers();
+
+        String inputAddress = view.readString("Enter address to filter: ").trim();
+
+        if (inputAddress.isEmpty()) {
+            view.showError("Address cannot be empty.");
+            return;
+        }
+
+        // 🔹 Normalizamos lo que escribe el usuario
+        String normalizedInput = inputAddress
+                .toLowerCase()
+                .replaceAll("\\s+", "")   // elimina espacios
+                .trim();
+
+        List<UserDTO> filteredUsers = new ArrayList<>();
+
+        for (UserDTO user : users) {
+
+            String userAddress = user.getAddress();
+
+            if (userAddress == null) continue;
+
+            // 🔹 Normalizamos la dirección del usuario
+            String normalizedUserAddress = userAddress
+                    .toLowerCase()
+                    .replaceAll("\\s+", "")
+                    .trim();
+
+            // 🔹 Coincidencia parcial
+            if (normalizedUserAddress.contains(normalizedInput)) {
+                filteredUsers.add(user);
+            }
+        }
+
+        if (filteredUsers.isEmpty()) {
+            view.showMessage("No users found with that address criteria.");
+        } else {
+            view.showUsers(filteredUsers);
+        }
     }
 
     private void handleBookManagement() {
@@ -382,19 +559,46 @@ public class LibraryController {
         view.showMessage("\n--- Books Loaned by Month Report ---");
         int year = view.readInt("Enter year (e.g., 2024): ");
         int month = view.readInt("Enter month (1-12): ");
-        
+
         if (month < 1 || month > 12) {
             view.showError("Invalid month. Please enter a value between 1 and 12.");
             return;
         }
-        
-        // TODO: Implement business logic here
-        // 1. Get data: library.getAllLoans(), library.getAllBooks()
-        // 2. Filter loans by year and month
-        // 3. Check if empty
-        // 4. Call: PDFReportGenerator.generateLoansByMonthReport(filteredLoans, allBooks, year, month)
-        view.showError("Report not implemented yet.");
-        view.showMessage("TODO: Assigned team member should implement filtering logic and call PDFReportGenerator");
+
+        try {
+            // 1. Get data
+            List<LoanDTO> allLoans = library.getAllLoans();
+            List<BookDTO> allBooks = library.getAllBooks();
+
+            // 2. Filter loans by year and month
+            List<LoanDTO> filteredLoans = allLoans.stream()
+                    .filter(loan -> {
+                        LocalDate loanDate = LocalDate.parse(loan.getLoanDate());
+                        return loanDate.getYear() == year &&
+                                loanDate.getMonthValue() == month;
+                    })
+                    .collect(java.util.stream.Collectors.toList());
+
+            // 3. Check if empty
+            if (filteredLoans.isEmpty()) {
+                view.showMessage("No books were loaned in " + month + "/" + year);
+                return;
+            }
+
+            // 4. Call PDF generator
+            String fileName = PDFReportGenerator.generateLoansByMonthReport(
+                    filteredLoans,
+                    allBooks,
+                    year,
+                    month
+            );
+
+            view.showSuccess("PDF report generated successfully!");
+            view.showMessage("File: " + fileName);
+
+        } catch (Exception e) {
+            view.showError("Failed to generate report: " + e.getMessage());
+        }
     }
 
     private void generateOverdueLoansReport() {
@@ -511,4 +715,6 @@ public class LibraryController {
             view.showError("Failed to generate report: " + e.getMessage());
         }
     }
+
+
 }

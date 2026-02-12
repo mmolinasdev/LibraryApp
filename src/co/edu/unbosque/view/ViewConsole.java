@@ -6,6 +6,17 @@ import co.edu.unbosque.model.dto.UserDTO;
 
 import java.util.List;
 import java.util.Scanner;
+//todas las importaciones nesesarias para el metodo de el final, solo descomente pos las partes que tengan comentarios y ya
+
+import java.net.URI;
+import java.net.URLEncoder;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public class ViewConsole {
     private Scanner scanner;
@@ -74,30 +85,30 @@ public class ViewConsole {
             System.out.println("+-----------+----------------------+------------------------+--------------+-----------+");
             System.out.println("|    ID     |        Name          |         Email          |  Reg. Date   |  Status   |");
             System.out.println("+-----------+----------------------+------------------------+--------------+-----------+");
-            
+
             for (UserDTO user : users) {
                 String status = user.isActive() ? "Active" : "Inactive";
-                
+
                 System.out.printf("| %-9s | %-20s | %-22s | %-12s | %-9s |%n",
-                    truncateText(user.getId(), 9),
-                    truncateText(user.getName(), 20),
-                    truncateText(user.getEmail(), 22),
-                    truncateText(user.getRegistrationDate(), 12),
-                    status
+                        truncateText(user.getId(), 9),
+                        truncateText(user.getName(), 20),
+                        truncateText(user.getEmail(), 22),
+                        truncateText(user.getRegistrationDate(), 12),
+                        status
                 );
             }
-            
+
             System.out.println("+-----------+----------------------+------------------------+--------------+-----------+");
-            System.out.println("Total users: " + users.size() + " | Active: " + 
-                users.stream().filter(UserDTO::isActive).count());
+            System.out.println("Total users: " + users.size() + " | Active: " +
+                    users.stream().filter(UserDTO::isActive).count());
         }
     }
 
     public void showBook(BookDTO book) {
         if (book != null) {
-            System.out.println("Book{ID='" + book.getId() + "', Title='" + book.getTitle() + 
-                             "', Author='" + book.getAuthor() + "', ISBN='" + book.getIsbn() + 
-                             "', Stock=" + book.getStock() + ", Available=" + book.getAvailableStock() + "}");
+            System.out.println("Book{ID='" + book.getId() + "', Title='" + book.getTitle() +
+                    "', Author='" + book.getAuthor() + "', ISBN='" + book.getIsbn() +
+                    "', Stock=" + book.getStock() + ", Available=" + book.getAvailableStock() + "}");
         } else {
             System.out.println("Book not found.");
         }
@@ -112,32 +123,32 @@ public class ViewConsole {
             System.out.println("+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
             System.out.println("|    ID     |         Title            |        Author         |       ISBN        | Stock | Available |");
             System.out.println("+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
-            
+
             for (BookDTO book : books) {
                 System.out.printf("| %-9s | %-24s | %-21s | %-17s | %-5d | %-9d |%n",
-                    truncateText(book.getId(), 9),
-                    truncateText(book.getTitle(), 24),
-                    truncateText(book.getAuthor(), 21),
-                    truncateText(book.getIsbn(), 17),
-                    book.getStock(),
-                    book.getAvailableStock()
+                        truncateText(book.getId(), 9),
+                        truncateText(book.getTitle(), 24),
+                        truncateText(book.getAuthor(), 21),
+                        truncateText(book.getIsbn(), 17),
+                        book.getStock(),
+                        book.getAvailableStock()
                 );
             }
-            
+
             System.out.println("+-----------+--------------------------+-----------------------+-------------------+-------+-----------+");
             int totalStock = books.stream().mapToInt(BookDTO::getStock).sum();
             int totalAvailable = books.stream().mapToInt(BookDTO::getAvailableStock).sum();
-            System.out.println("Total books: " + books.size() + " | Total copies: " + totalStock + 
-                             " | Available: " + totalAvailable);
+            System.out.println("Total books: " + books.size() + " | Total copies: " + totalStock +
+                    " | Available: " + totalAvailable);
         }
     }
 
     public void showLoan(LoanDTO loan) {
         if (loan != null) {
-            System.out.println("Loan{ID='" + loan.getId() + "', User ID='" + loan.getUserId() + 
-                             "', Book ID='" + loan.getBookId() + "', Loan Date=" + loan.getLoanDate() + 
-                             ", Return Date=" + loan.getReturnDate() + 
-                             ", Active=" + (loan.isActive() ? "Yes" : "No") + "}");
+            System.out.println("Loan{ID='" + loan.getId() + "', User ID='" + loan.getUserId() +
+                    "', Book ID='" + loan.getBookId() + "', Loan Date=" + loan.getLoanDate() +
+                    ", Return Date=" + loan.getReturnDate() +
+                    ", Active=" + (loan.isActive() ? "Yes" : "No") + "}");
         } else {
             System.out.println("Loan not found.");
         }
@@ -152,23 +163,23 @@ public class ViewConsole {
             System.out.println("+-----------------+-----------+-----------+--------------+--------------+----------------------+");
             System.out.println("|    Loan ID      |  User ID  |  Book ID  |  Loan Date   | Return Date  |       Status         |");
             System.out.println("+-----------------+-----------+-----------+--------------+--------------+----------------------+");
-            
+
             for (LoanDTO loan : loans) {
                 String status = loan.isActive() ? "Active" : "Returned";
-                
+
                 System.out.printf("| %-15s | %-9s | %-9s | %-12s | %-12s | %-20s |%n",
-                    truncateText(loan.getId(), 15),
-                    truncateText(loan.getUserId(), 9),
-                    truncateText(loan.getBookId(), 9),
-                    loan.getLoanDate(),
-                    loan.getReturnDate(),
-                    status
+                        truncateText(loan.getId(), 15),
+                        truncateText(loan.getUserId(), 9),
+                        truncateText(loan.getBookId(), 9),
+                        loan.getLoanDate(),
+                        loan.getReturnDate(),
+                        status
                 );
             }
-            
+
             System.out.println("+-----------------+-----------+-----------+--------------+--------------+----------------------+");
-            System.out.println("Total loans: " + loans.size() + " | Active: " + 
-                loans.stream().filter(LoanDTO::isActive).count());
+            System.out.println("Total loans: " + loans.size() + " | Active: " +
+                    loans.stream().filter(LoanDTO::isActive).count());
         }
     }
 
@@ -181,36 +192,36 @@ public class ViewConsole {
             System.out.println("+-----------------+-----------------------+-----------------------------------+--------------+----------------------+");
             System.out.println("|    Loan ID      |      User Name        |            Book Title             |  Loan Date   |       Status         |");
             System.out.println("+-----------------+-----------------------+-----------------------------------+--------------+----------------------+");
-            
+
             for (LoanDTO loan : loans) {
                 UserDTO user = users.stream()
-                    .filter(u -> u.getId().equals(loan.getUserId()))
-                    .findFirst()
-                    .orElse(null);
+                        .filter(u -> u.getId().equals(loan.getUserId()))
+                        .findFirst()
+                        .orElse(null);
                 String userName = user != null ? user.getName() : "Unknown User";
-                
+
                 BookDTO book = books.stream()
-                    .filter(b -> b.getId().equals(loan.getBookId()))
-                    .findFirst()
-                    .orElse(null);
+                        .filter(b -> b.getId().equals(loan.getBookId()))
+                        .findFirst()
+                        .orElse(null);
                 String bookTitle = book != null ? book.getTitle() : "Unknown Book";
-                
+
                 String status = loan.isActive() ? "Active" : "Returned";
-                
+
                 System.out.printf("| %-15s | %-21s | %-33s | %-12s | %-20s |%n",
-                    truncateText(loan.getId(), 15),
-                    truncateText(userName, 21),
-                    truncateText(bookTitle, 33),
-                    loan.getLoanDate(),
-                    status
+                        truncateText(loan.getId(), 15),
+                        truncateText(userName, 21),
+                        truncateText(bookTitle, 33),
+                        loan.getLoanDate(),
+                        status
                 );
             }
-            
+
             System.out.println("+-----------------+-----------------------+-----------------------------------+--------------+----------------------+");
             System.out.println("Total active loans: " + loans.size());
         }
     }
-    
+
     private String truncateText(String text, int maxLength) {
         if (text == null) {
             return "";
@@ -246,6 +257,9 @@ public class ViewConsole {
         System.out.println("2. Update User");
         System.out.println("3. Delete User");
         System.out.println("4. List All Users");
+        // solo añadi esta opcion 5 al menu
+        System.out.println("5. View user address information");
+        System.out.println("6. filter users by adress");
         System.out.println("0. Back to Main Menu");
         System.out.println("=================================");
         return readInt("Select an option: ");
@@ -301,43 +315,44 @@ public class ViewConsole {
         String name = readString("Name: ");
         String email = readString("Email: ");
         String phone = readString("Phone: ");
-        String address = readString("Address: ");
+        //lo mismo que el comentario que puse en el metodo collectUserUpdateData
+        String address = requestValidAddress();
         String birthDate = readString("Birth Date (yyyy-MM-dd) [optional]: ");
-        
+
         String registrationDate = java.time.LocalDate.now().toString();
         boolean isActive = true;
-        
+
         return new UserDTO(id, name, email, phone, address, birthDate, registrationDate, isActive);
     }
 
     public UserDTO collectUserUpdateData(UserDTO existingUser) {
         System.out.println("\n--- Update User Data ---");
         showUser(existingUser);
-        
+
         String name = readString("New name (press Enter to keep current): ");
         if (name.isEmpty()) name = existingUser.getName();
-        
+
         String email = readString("New email (press Enter to keep current): ");
         if (email.isEmpty()) email = existingUser.getEmail();
-        
+
         String phone = readString("New phone (press Enter to keep current): ");
         if (phone.isEmpty()) phone = existingUser.getPhone();
-        
-        String address = readString("New address (press Enter to keep current): ");
+        //aqui estoy usando el metodo de abajo que cree, antes usada el metodo readString, ahora usa el que yo hize:D solo descomentelo quitandole los */
+        String address = requestValidAddress();
         if (address.isEmpty()) address = existingUser.getAddress();
-        
+
         String birthDate = readString("New birth date (yyyy-MM-dd, press Enter to keep current): ");
         if (birthDate.isEmpty()) birthDate = existingUser.getBirthDate();
-        
+
         String statusInput = readString("Active? (yes/no, press Enter to keep current): ");
         boolean isActive = existingUser.isActive();
 
         if (!statusInput.isEmpty()) {
             isActive = statusInput.equalsIgnoreCase("yes") || statusInput.equalsIgnoreCase("y");
         }
-        
-        return new UserDTO(existingUser.getId(), name, email, phone, address, birthDate, 
-                          existingUser.getRegistrationDate(), isActive);
+
+        return new UserDTO(existingUser.getId(), name, email, phone, address, birthDate,
+                existingUser.getRegistrationDate(), isActive);
     }
 
     public BookDTO collectBookData() {
@@ -353,16 +368,16 @@ public class ViewConsole {
     public BookDTO collectBookUpdateData(BookDTO existingBook) {
         System.out.println("\n--- Update Book Data ---");
         showBook(existingBook);
-        
+
         String title = readString("New title (press Enter to keep current): ");
         if (title.isEmpty()) title = existingBook.getTitle();
-        
+
         String author = readString("New author (press Enter to keep current): ");
         if (author.isEmpty()) author = existingBook.getAuthor();
-        
+
         String isbn = readString("New ISBN (press Enter to keep current): ");
         if (isbn.isEmpty()) isbn = existingBook.getIsbn();
-        
+
         String stockInput = readString("New stock quantity (press Enter to keep current): ");
         int stock = existingBook.getStock();
         if (!stockInput.isEmpty()) {
@@ -372,15 +387,15 @@ public class ViewConsole {
                 System.out.println("Invalid stock quantity. Keeping current value.");
             }
         }
-        
+
         int currentLoaned = existingBook.getStock() - existingBook.getAvailableStock();
         int availableStock = stock - currentLoaned;
-        
+
         if (availableStock < 0) {
             System.out.println("Warning: New stock is less than currently loaned copies. Setting available to 0.");
             availableStock = 0;
         }
-        
+
         return new BookDTO(existingBook.getId(), title, author, isbn, stock, availableStock);
     }
 
@@ -392,4 +407,149 @@ public class ViewConsole {
     public void close() {
         scanner.close();
     }
+
+    // todo este metodo lo cree yo y se llama cuando se piden las direcciones arriba.
+    // lo que hize fue cambiar el readString por este metodo y ya:D
+    public String requestValidAddress() {
+
+        while (true) {
+
+            showMessage("address: ");
+
+            String zoneType = readString("Is it Urban or Rural? (U/R): ").trim().toUpperCase();
+
+            if (!zoneType.equals("U") && !zoneType.equals("R")) {
+                showError("Please enter U for Urban or R for Rural.");
+                continue;
+            }
+
+            String country = readString("Country (default Colombia): ").trim();
+            if (country.isEmpty()) {
+                country = "Colombia";
+            }
+
+            String city = readString("City/Municipality: ").trim();
+
+            if (city.isEmpty()) {
+                showError("City/Municipality is required.");
+                continue;
+            }
+
+            String mainField = "";
+            String originalAddress = "";
+
+            if (zoneType.equals("U")) {
+
+                String street = readString("Street (ej. Calle 159A) (optional): ").trim();
+                String avenue = readString("Avenue (ej. Carrera 7D) (optional): ").trim();
+                String locality = readString("Locality (ej. Usaquen) (REQUIRED): ").trim();
+                String neighbourhood = readString("Neighbourhood (ej. Barrancas) (optional): ").trim();
+                String houseNumber = readString("House number (ej. 24) (optional): ").trim();
+
+                if (locality.isEmpty()) {
+                    showError("Locality is required in Urban zone.");
+                    continue;
+                }
+
+                if (street.isEmpty() && avenue.isEmpty() && neighbourhood.isEmpty()) {
+                    showError("At least one of Street, Avenue or Neighbourhood must be filled.");
+                    continue;
+                }
+
+                if (!street.isEmpty()) {
+                    mainField = street;
+                } else if (!avenue.isEmpty()) {
+                    mainField = avenue;
+                } else {
+                    mainField = neighbourhood;
+                }
+
+                originalAddress = String.join(", ",
+                        street,
+                        avenue,
+                        locality,
+                        neighbourhood,
+                        houseNumber,
+                        city,
+                        country
+                );
+
+            } else { // RURAL
+
+                String road = readString("Road / Via (optional): ").trim();
+                String vereda = readString("Vereda (optional): ").trim();
+                String village = readString("Village / Town (optional): ").trim();
+
+                if (road.isEmpty() && vereda.isEmpty() && village.isEmpty()) {
+                    showError("At least one optional field must be filled.");
+                    continue;
+                }
+
+                if (!road.isEmpty()) {
+                    mainField = road;
+                } else if (!vereda.isEmpty()) {
+                    mainField = vereda;
+                } else {
+                    mainField = village;
+                }
+
+                originalAddress = String.join(", ",
+                        road,
+                        vereda,
+                        village,
+                        city,
+                        country
+                );
+            }
+
+            try {
+
+                String queryStreet = mainField.replaceAll("[^a-zA-Z0-9áéíóúÁÉÍÓÚñÑ\\s\\-]", "")
+                        .replaceAll("\\s+", " ").trim();
+
+                String queryCity = city.replaceAll("[^a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]", "")
+                        .replaceAll("\\s+", " ").trim();
+
+                String queryCountry = country.replaceAll("[^a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]", "")
+                        .replaceAll("\\s+", " ").trim();
+
+                String url = "https://nominatim.openstreetmap.org/search?"
+                        + "street=" + URLEncoder.encode(queryStreet, StandardCharsets.UTF_8)
+                        + "&city=" + URLEncoder.encode(queryCity, StandardCharsets.UTF_8)
+                        + "&country=" + URLEncoder.encode(queryCountry, StandardCharsets.UTF_8)
+                        + "&format=jsonv2"
+                        + "&addressdetails=1"
+                        + "&limit=1"
+                        + "&countrycodes=co";
+
+                HttpClient client = HttpClient.newHttpClient();
+
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(url))
+                        .header("User-Agent", "LibraryApp/1.0 (tuemail@dominio.com)")
+                        .GET()
+                        .build();
+
+                HttpResponse<String> response =
+                        client.send(request, HttpResponse.BodyHandlers.ofString());
+
+                if (response.statusCode() != 200) {
+                    continue;
+                }
+
+                ObjectMapper mapper = new ObjectMapper();
+                JsonNode root = mapper.readTree(response.body());
+
+                if (!root.isEmpty()) {
+                    return originalAddress;
+                }
+
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
+
+
 }
